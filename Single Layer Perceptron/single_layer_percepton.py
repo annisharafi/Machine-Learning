@@ -4,7 +4,7 @@ import math as m
 
 #dataset import
 idx = ['x1','x2','x3','x4','name']
-df=pd.read_csv('E:\iris.csv',names=idx)
+df=pd.read_csv('D:\iris.csv',names=idx)
 
 #representate type or species into binary representation 
 df=df.assign(code=0.0)
