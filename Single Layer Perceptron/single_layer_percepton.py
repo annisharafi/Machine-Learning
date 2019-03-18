@@ -1,28 +1,28 @@
-
-
-import pandas as pd  
-import numpy as np  
+import pandas as pd    
 import matplotlib.pyplot as plt  
 import math as m
 
+#dataset import
 idx = ['x1','x2','x3','x4','name']
 df=pd.read_csv('E:\iris.csv',names=idx)
 
-df
-
+#representate type or species into binary representation 
 df=df.assign(code=0.0)
 
 for i,j in enumerate(df.name):
     df.code[i] = 1.0 if j == 'setosa' else 0.0
 
+#convert dataset into list/matrix
 dataset = df.head(100).values.tolist()
 
+#divide dataset into 5 section
 section1 = dataset[:10]+dataset[90:100]
 section2 = dataset[10:20]+dataset[80:90]
 section3 = dataset[20:30]+dataset[70:80]
 section4 = dataset[30:40]+dataset[60:70]
 section5 = dataset[40:50]+dataset[70:80]
 
+#define training data
 train1 = section1[:]+section2[:]+section3[:]+section4[:]
 train2 = section2[:]+section3[:]+section4[:]+section5[:]
 train3 = section1[:]+section3[:]+section4[:]+section5[:]
@@ -32,6 +32,7 @@ train5 = section1[:]+section2[:]+section3[:]+section5[:]
 train=[train1,train2, train3,train4, train5]
 validasi= [section5, section1, section2, section3, section4]
 
+#initiate data weigth
 weigth = [0.5,0.5,0.5,0.5]
 listWeigth = [weigth[:] for i in range(5)]
 dWeigth = [0.5,0.5,0.5,0.5]
@@ -45,6 +46,8 @@ error_val_final = []
 acc_train_final = []
 acc_val_final = []
 
+
+#summary function
 def total(x,j):
     totalWeigth=0
     global listWeigth
@@ -56,40 +59,45 @@ def total(x,j):
     
     return totalWeigth
 
-  
+ #sigmoid function 
 def activation(totalWeight):
     aktivasi= (1/(1+(m.exp(-totalWeight))))
     return aktivasi
 
+#derivative neuron weigth
 def dt(x, target,act):
     global dWeigth
     for i in range (4):
        dWeigth[i]= 2*x[i]*act*(act-target)*(1-act)
-        
+#derivative bias neuron weigth      
 def dtBias(target,act):
     global dbias
     dbias=2*bias*act*(target-act)*(1-act)
 
-
+#calculate error
 def error(act,target):
     error = pow((target-act),2)
     return error
-  
+ 
+#representation prediction
 def prediction(act):
     if (act>=0.5):
         return 1
     else:
         return 0
 
+#updating weigth
 def newWeigth(j,lRate):
     global listWeigth
     for i in range(4):
       listWeigth[j][i]= listWeigth[j][i]-(lRate*dWeigth[i])
       
-
+#updating bias
 def newBias(j,lRate):
     global listBias
     listBias[j]= listBias[j]- (lRate*dbias)
+
+#main program
 def main(lR):
     for i in range (300):
       sumErr_Train=0.0
@@ -154,6 +162,9 @@ def main(lR):
     plt.legend(loc='upper left')
     plt.show()
 
+#learing rate =0.1
 #main(0.1)
+
+#learing rate=0.8
 main(0.8)
 
