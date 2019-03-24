@@ -7,239 +7,173 @@ Original file is located at
     https://colab.research.google.com/drive/1QPj6J_apuCuu3oQF8GqM59rkHDOAmTaH
 """
 
-import pandas as pd  
-import numpy as np  
-import matplotlib.pyplot as plt  
-import random
-import math as m
+from random import seed
+from random import random
+import math as mt
+import csv
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
 
-#dataset
-idx=['x1','x2','x3','x4','name']
-df= pd.read_csv('iris2.csv',names=idx)
+#import file and giving title
+idx = ['x1','x2','x3','x4','name']
+df = pd.read_csv('iris2.csv', names=idx)
 
-#set dataset into list
-dataset= df.head(150).values.tolist()
+dataset = df.values.tolist()
 
-#representating type into binary
-
+#representing into binary
 for i in dataset:
-  if (i[4]=='Iris-setosa'):
-    i.append(0)
-    i.append(0)
-    i.append(0)
-  elif (i[4]=='Iris-versicolor'):
-    i.append(0)
-    i.append(1)
-    i.append(1)
-  else:
-    i.append(1)
-    i.append(0)
-    i.append(2)
-
-#suffle data into random
+	if(i[4]=='Iris-setosa'):
+		i.append(0)
+		i.append(0)
+	elif(i[4]=='Iris-versicolor'):
+		i.append(1)
+		i.append(0)
+	else:
+		i.append(0)
+		i.append(1)
+    
+#data di suffle     
 np.random.shuffle(dataset)
 
-#separating data
-train=dataset[:120]
-validasi=dataset[120:150]
+data_train = dataset[:120]
+data_val = dataset[120:]
 
+def init_network(n_inputs,n_hiddens,n_outputs):
+  network = list()
+  hidden_layer = [{'weights':[random() for i in range(n_inputs + 1)]} for i in range(n_hiddens) ]
+  network.append(hidden_layer)
+  output_layer = [{'weights':[random() for i in range(n_hiddens + 1)]} for i in range(n_outputs)]
+  network.append(output_layer)
+  return network
 
-#inisiasi nilai awal
-errorFinal=[]
-accFinal=[]
-errorFinal_val=[]
-accFinal_val=[]
+#total input[]*weigth[]
+def result(weights, inputs):
+	res = weights[-1]
+	for i in range(len(weights)-1):
+		res += weights[i] * inputs[i]
+	return res
 
-w=[0.5,0.5,0.5,0.5]
-w1=[w for i in range (4)]
-wSec=[w for i in range (2)]
+# activation using sigmoid
+def sigmoid(res):
+	return 1.0 / (1.0 + mt.exp(-res))
 
+# Forward propagation from input to a network output
+def forward(network, row):
+	inputs = row
+	for layer in network:
+		new_inputs = []
+		for neuron in layer:
+			total = result(neuron['weights'], inputs)
+			neuron['output'] = sigmoid(total)
+			new_inputs.append(neuron['output'])
+		inputs = new_inputs
+	return inputs
 
+def sigmoid_dt(output):
+	return (output * (1.0 - output))
 
-for i in range(4):
-  for j in range (4):
-    w1[i][j]=random.uniform(0,1)
+# Backpropagate 
+def backward(network, expected):
+	for i in reversed(range(len(network))):
+		layer = network[i]
+		errors = list()
+		if i != len(network)-1:
+			for j in range(len(layer)):
+				error = 0.0
+				for neuron in network[i + 1]:
+					error += (neuron['weights'][j] * neuron['delta'])
+				errors.append(error)
+		else:
+			for j in range(len(layer)):
+				neuron = layer[j]
+				errors.append(expected[j] - neuron['output'])
+		for j in range(len(layer)):
+			neuron = layer[j]
+			neuron['delta'] = errors[j] * sigmoid_dt(neuron['output'])
 
-for i in range(2):
-  for j in range (4):
-    wSec[i][j]=random.uniform(0,1)
+def train_network(network, train, l_rate, epoch, n_outputs):
+	for epoch in range(epoch):
+		sum_error = 0
+		for row in train:
+			outputs = forward(network, row)
+			expected = [0 for i in range(n_outputs)]
+			expected[row[-1]] = 1
+			sum_error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+			backward(network, expected)
+			update_weights(network, row, l_rate)
+		print('>epoch=%d, lrate=%.3f, error=%.3f' % (epoch, l_rate, sum_error))
+
+def update_weights(net,row,l_rate):
+  for i in range(len(net)):
+    inputs = row[:4]
+    if i != 0:
+      inputs = [neuron['output'] for neuron in net[i-1]]
+    for neuron in net[i]:
+      for j in range(len(inputs)):
+        neuron['weights'][j] += l_rate * neuron['delta'] * inputs[j]
+      neuron['weights'][-1] += l_rate * neuron['delta']
+
+def predict(outputs):
+  pred = list()
+  for i in outputs:
+    if i>0.5:
+      pred.append(1)
+    else:
+      pred.append(0)
+  return pred
+
+n_epoch = 300
+network = init_network(4,8,2)
+l_rate = 0.1
+
+error_train = list()
+acc_train = list()
+error_val = list()
+acc_val = list()
+for epoch in range(n_epoch):
+  sum_error = 0
+  sum_acc = 0
+  for row in data_train:
+    outputs = forward(network,row)
+    expected = [0 for ex in range(2)]
+    expected[0] = row[-2]
+    expected[1] = row[-1]
+    sum_error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+    if(expected == predict(outputs)):
+      sum_acc += 1
+    backward(network,expected)
+    update_weights(network, row, l_rate)
     
-    
-
-act_h=[0.0,0.0,0.0,0.0]
-act_o=[0.0,0.0]
-
-bias=[0.5,0.5,0.5,0.5]
-secbias=[0.5,0.5]
-
-
-
-"""**Fungsi**"""
-
-#pass forward
-
-
-#sum function
-def total (x,weigth,bias):
-  total=0.0
-  for i in range (len(x)):
-    total+=x[i]+weigth[i]
-    
-  return total+bias
-
-#sigmoid fuction
-def activation(res):
-  return (1/(1+m.exp(-res)))
-
-#error
-def error(trg,act):
-  return (1/2*(m.pow((trg-act),2)))
-
-
-def prediction(act):
-	if act[0]<0.5 and act[1]<0.5:
-		return 0
-	elif act[0]>0.5 and act[1]<0.5:
-		return 1
-	elif act[0]<0.5 and act[1]>0.5:
-		return 2
-	else:
-		return 3	
-
-#backward
-def dwSec(trg,out,outh):
-  hasil=0
-  hasil =dTotal_out(trg,out)*dOut_net(out)*outh
-  return hasil
-
-def dTotal_out(trg,out):
-  return (-(trg-out))
-
-def dOut_net(out):
-  return ( out*(1-out))
-
-def errTotal(target,output,w):
-	res = 0
-	res = dTotal_out(target,output) * dOut_net(output) * w
-	return res
-
-def dError_W(total,out,x):
-	res = 0
-	res = total * dOut_net(out) * x
-	return res
-
-def update_bias(target,output):
-	res = 0
-	res = dTotal_out(target,output) * dOut_net(output)
-	return res
-
-def update_bias1(total,out):
-	res = 0;
-	res = total * dOut_net(out)
-	return res
-
-epoch=300
-act_val_h=[0,0,0,0]
-act_val_o=[0,0]
-
-
-total_error=[]
-avg_errors_train = []
-avg_errors_val = []
-avg_acc_train = []
-avg_acc_val = []
-
-
-for i in range(epoch): #epoch
-  tptn=0.0
-  tptn2=0.0
-  nilaiError=[0.0,0.0]
-  nilaiError2=[0.0,0.0]
   
-  #training
-  for j in range(120):
-    sumerror=0
-    sumerror2=0
+  error_train.append(mt.log(sum_error/120))  
+  acc_train.append(sum_acc/120)
+  
+  sum_error = 0
+  sum_acc = 0
+  for row in data_val:
+    outputs = forward(network,row)
+    expected = [0 for ex in range(2)]
+    expected[0] = row[-2]
+    expected[1] = row[-1]
+    sum_error += sum([(expected[i]-outputs[i])**2 for i in range(len(expected))])
+    if(expected == predict(outputs)):
+      sum_acc += 1
     
-    #feedforward
-    for k in range (4):
-      global act_h
-      act_h[k]= activation(total(train[j][0:4],w1[k],bias[k]))
-      
-    
-    for l in range (2):
-      global act_o
-      act_o[l]=activation(total(act_h,wSec[l],secbias[l]))
-      
-      nilaiError[l]= error(train[j][l+5],act_o[l])
-      sumerror+=nilaiError[l]
-    
-    
-    if prediction(act_o)==train[j][7]:
-      tptn+=1
-    tptn+= (sumerror/2) 
-    
-    
-    
-    #backpropagation
-    tempSecWeigth = wSec
-    #to_hidden
-    for out in range(2):
-      for hid in range(4):
-        wSec[out][hid]=wSec[out][hid]-(0.8*dwSec(train[j][out+5],act_o[out],act_h[hid]))
-      secbias[out] = secbias[out] - (0.8*update_bias(train[j][out+5],act_o[out]))
- 
-
-    for cou in range(4):
-          counter = 0
-          for rt in range(2):
-            counter += errTotal(train[j][rt+5],act_o[rt],wSec[rt][cou])
-          total_error.append(counter)
-
-    for fin in range(4):
-      for fin2 in range(4):
-        
-        w1[fin][fin2] = w1[fin][fin2] - (0.8*dError_W(total_error[fin],act_h[fin],train[j][fin2]))
-
-      # global bias1
-      bias[fin] = bias[fin] - (0.8*update_bias1(total_error[fin],act_h[fin]))
-    
-  errorFinal.append(sumerror/120)
-  accFinal.append(tptn/120)
-    
-    
-  #validasi
-  for i in range (30):
-    for k in range (4):
-      act_val_h[k]= activation(total(validasi[i][0:4],w1[k],bias[k]))
-      
-    
-    for l in range (2):
-      act_val_o[l]=activation(total(act_val_h,wSec[l],secbias[l]))
-      
-      nilaiError2[l]= error(validasi[i][l+5],act_val_o[l])
-      sumerror2+=nilaiError2[l]
-    
-    
-    if prediction(act_val_o)==validasi[i][7]:
-      tptn2+=1
-    tptn2+= (sumerror2/2) 
-    
-  errorFinal_val.append(sumerror/120)
-  accFinal_val.append(tptn/120)
+  
+  error_val.append(mt.log(sum_error/30)) 
+  acc_val.append(sum_acc/30)
 
 plt.figure(1)
-plt.plot(errorFinal,'r-', label='train')
-plt.plot(errorFinal_val, label='validasi')
+plt.plot(error_train,'r-', label='train')
+plt.plot(error_val,'b-', label='validation')
 plt.xlabel('epoch')
 plt.ylabel('error')
 plt.legend(loc='upper right')
-plt.show()
 
 plt.figure(2)
-plt.plot(accFinal,'r-', label='train')
-plt.plot(accFinal_val, label='validasi')
+plt.plot(acc_train,'r-', label='train')
+plt.plot(acc_val,'b-', label='validation')
 plt.xlabel('epoch')
-plt.ylabel('akurasi')
+plt.ylabel('accuracy')
 plt.legend(loc='upper right')
-plt.show()
