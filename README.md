@@ -1,5 +1,6 @@
 # MachineLearning
-Klasifikasi pada iris
+- Klasifikasi pada iris
 1. SLP ( Single Layer Perceptron )
 2. Multi Layer Perceptron with backpropagation 
-3. Convolutional Neural Network
+
+- Convolutional Neural Network pada MNIST database
